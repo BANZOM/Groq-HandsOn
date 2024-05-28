@@ -31,7 +31,7 @@ class GroqService:
     
     def embed_and_load(self):
         logging.info("Embedding and loading PDFs")
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         loader = PyPDFDirectoryLoader(self.path_to_pdfs)
         docs = loader.load()
         logging.info("Documents loaded")
@@ -51,7 +51,7 @@ class GroqService:
         logging.info("Retriever created")
         document_chain = create_stuff_documents_chain(self._llm, self.template())
         logging.info("Document chain created")
-        retrieval_chain = create_retrieval_chain(retriever=retriver, document_chain=document_chain)
+        retrieval_chain = create_retrieval_chain(retriver,document_chain)
         logging.info("Retrieval chain created")
         start_time = time.process_time()
         logging.info("Invoking chain")
