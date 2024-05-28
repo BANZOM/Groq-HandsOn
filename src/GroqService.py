@@ -34,10 +34,10 @@ class GroqService:
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
         loader = PyPDFDirectoryLoader(self.path_to_pdfs)
         docs = loader.load()
-        logging.info(f"Number of documents loaded: {len(docs)}")
+        logging.info("Documents loaded")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splitted_docs = text_splitter.split_documents(docs)
-        logging.info(f"Number of splitted documents: {len(splitted_docs)}")
+        logging.info("Documents splitted")
         vectors = FAISS.from_documents(splitted_docs, embeddings)
         return vectors
 
@@ -58,7 +58,7 @@ class GroqService:
 
 
 if __name__ == '__main__':
-    obj = GroqService(path_to_pdfs="Documents")
+    obj = GroqService(path_to_pdfs="../../Documents")
     response, time_taken = obj.run("What is the capital of India?")
     print(response["answer"])
     print(time_taken)
