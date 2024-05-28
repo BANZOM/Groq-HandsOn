@@ -62,6 +62,8 @@ class GroqService:
 
 if __name__ == '__main__':
     obj = GroqService(path_to_pdfs=os.getenv("BASE_PATH") + "/src/Documents")
-    response, time_taken = obj.run("What is the capital of India?")
-    print(response["answer"])
-    print(time_taken)
+    while True:
+        query = input("Enter your query: ")
+        response, time_taken = obj.run(query)
+        print(response["answer"])
+        print(time_taken)
