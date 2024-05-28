@@ -1,13 +1,12 @@
 from langchain_groq import ChatGroq
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from dotenv import load_dotenv
 import os
 import Template
+import Embed
 import time
 import logging
 
@@ -16,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 class GroqService:
-    def __init__(self, model_name="Llama3-8b-8192", path_to_pdfs=None):
+    def __init__(self, model_name="mixtral-8x7b-32768", path_to_pdfs=None):
         logging.info("Initializing GroqService")
         self.model_name = model_name
 
@@ -29,26 +28,16 @@ class GroqService:
         
         self._llm = ChatGroq(groq_api_key=os.getenv("GROQ_API_KEY"), model_name=self.model_name)
         self._is_local = False
+        self._embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     
     def embed_and_load(self):
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-
         if self._is_local:
             logging.info("Loading vectors from local")
-            return FAISS.load_local("./faiss_db", embeddings, allow_dangerous_deserialization=True)
+            return FAISS.load_local("./faiss_db", self._embeddings, allow_dangerous_deserialization=True)
         
-        logging.info("Embedding and loading PDFs")
-        loader = PyPDFDirectoryLoader(self.path_to_pdfs)
-        docs = loader.load()
-        logging.info("Documents loaded")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        splitted_docs = text_splitter.split_documents(docs[:20])
-        logging.info("Documents splitted")
-        vectors = FAISS.from_documents(splitted_docs, embeddings)
-        vectors.save_local("./faiss_db")
-        logging.info("Vectors saved locally")
+        Embed.load_pdf_and_embed(self.path_to_pdfs)
         self._is_local = True
-        return vectors
+        return self.embed_and_load()
 
     def template(self):
         logging.info("Creating template")
