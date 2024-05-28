@@ -12,9 +12,24 @@ import os
 load_dotenv()
 
 class GroqService:
-    def __init__(self):
-        self._llm = ChatGroq(groq_api_key=os.getenv("GROQ_API_KEY"), model_name="Llama3-8b-8192")
-        pass
+    def __init__(self, model_name="Llama3-8b-8192", path_to_pdfs=None):
+        self.model_name = model_name
+
+        if path_to_pdfs not in [None, ""]:
+            self.path_to_pdfs = path_to_pdfs
+        else:
+            raise Exception("Please provide path to PDFs")
+        
+        self._llm = ChatGroq(groq_api_key=os.getenv("GROQ_API_KEY"), model_name=self.model_name)
+
+    def embed_and_load(self):
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        loader = PyPDFDirectoryLoader(self.path_to_pdfs)
+        docs = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        splitted_docs = text_splitter.split_documents(docs)
+        vectors = FAISS.from_documents(splitted_docs, embeddings)
+        return vectors
 
     def template(self):
         prompt = ChatPromptTemplate.from_template(
