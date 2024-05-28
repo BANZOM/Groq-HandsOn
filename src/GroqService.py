@@ -36,7 +36,7 @@ class GroqService:
         docs = loader.load()
         logging.info("Documents loaded")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        splitted_docs = text_splitter.split_documents(docs)
+        splitted_docs = text_splitter.split_documents(docs[:20])
         logging.info("Documents splitted")
         vectors = FAISS.from_documents(splitted_docs, embeddings)
         return vectors
@@ -47,9 +47,12 @@ class GroqService:
     
     def run(self, query):
         logging.info("creating chain and invoking it")
-        document_chain = create_stuff_documents_chain(llm=self._llm, prompt=self.template())
         retriver = self.embed_and_load().as_retriever()
+        logging.info("Retriever created")
+        document_chain = create_stuff_documents_chain(self._llm, self.template())
+        logging.info("Document chain created")
         retrieval_chain = create_retrieval_chain(retriever=retriver, document_chain=document_chain)
+        logging.info("Retrieval chain created")
         start_time = time.process_time()
         logging.info("Invoking chain")
         response = retrieval_chain.invoke({"input": query})
@@ -58,7 +61,7 @@ class GroqService:
 
 
 if __name__ == '__main__':
-    obj = GroqService(path_to_pdfs="../../Documents")
+    obj = GroqService(path_to_pdfs=os.getenv("BASE_PATH") + "/src/Documents")
     response, time_taken = obj.run("What is the capital of India?")
     print(response["answer"])
     print(time_taken)
