@@ -28,10 +28,16 @@ class GroqService:
             raise ValueError("Please provide path to PDFs")
         
         self._llm = ChatGroq(groq_api_key=os.getenv("GROQ_API_KEY"), model_name=self.model_name)
+        self._is_local = False
     
     def embed_and_load(self):
-        logging.info("Embedding and loading PDFs")
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+        if self._is_local:
+            logging.info("Loading vectors from local")
+            return FAISS.load_local("./faiss_db", embeddings, allow_dangerous_deserialization=True)
+        
+        logging.info("Embedding and loading PDFs")
         loader = PyPDFDirectoryLoader(self.path_to_pdfs)
         docs = loader.load()
         logging.info("Documents loaded")
@@ -39,6 +45,9 @@ class GroqService:
         splitted_docs = text_splitter.split_documents(docs[:20])
         logging.info("Documents splitted")
         vectors = FAISS.from_documents(splitted_docs, embeddings)
+        vectors.save_local("./faiss_db")
+        logging.info("Vectors saved locally")
+        self._is_local = True
         return vectors
 
     def template(self):
